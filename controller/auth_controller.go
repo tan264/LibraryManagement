@@ -1,49 +1,65 @@
 package controller
 
 import (
-	"database/sql"
+	"LibraryManagement/model"
+	"LibraryManagement/service"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"net/http"
-	"time"
 )
 
-type RegisterInput struct {
-	UserID         uint           `json:"userId" gorm:"primary_key; auto_increment"`
-	Username       string         `json:"username" gorm:"not_null; unique" binding:"required"`
-	Password       string         `json:"password" gorm:"not_null" binding:"required"`
-	Email          sql.NullString `json:"email"`
-	Phone          sql.NullString `json:"phone"`
-	FirstName      sql.NullString `json:"firstName"`
-	LastName       sql.NullString `json:"lastName"`
-	DateRegistered time.Time      `json:"dateRegistered" gorm:"not_null; default:current_timestamp()"`
-	IsActive       uint           `json:"isActive" gorm:"type:tinyint(1); default:1"`
-	IsAdmin        uint           `json:"isAdmin" gorm:"type:tinyint(1); default:0"`
+type IAuthController interface {
+	Login(context *gin.Context)
+	Register(context *gin.Context)
 }
 
-func Register(context *gin.Context, db *gorm.DB) {
-	var input RegisterInput
-	
-	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "data": input})
+type authController struct {
+	authService service.IAuthService
+	jwtService  service.IJwtService
+}
+
+func (a authController) Login(context *gin.Context) {
+	var loginRequest model.LoginRequest
+	if err := context.ShouldBindJSON(&loginRequest); err != nil {
+		response := model.BuildResponse("Failed to process request", err.Error(), nil)
+		context.AbortWithStatusJSON(http.StatusBadRequest, response)
 		return
 	}
-	
-	hashedPassword, err := HashPassword(input.Password)
-	input.Password = hashedPassword
+	loggedUserID, err := a.authService.VerifyCredential(loginRequest.Username, loginRequest.Password)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "data": input})
-		return
+		response := model.BuildResponse("Login Failed!", "Invalid username or password", nil)
+		context.JSON(http.StatusConflict, response)
+	} else {
+		token, err := a.jwtService.GenerateToken(loggedUserID)
+		if err != nil {
+			response := model.BuildResponse("Something wrong", "Internal error", nil)
+			context.JSON(http.StatusInternalServerError, response)
+		} else {
+			response := model.BuildResponse("Login success", "", token)
+			context.JSON(http.StatusOK, response)
+		}
 	}
-	
-	db.Create(&input)
-	
-	context.JSON(http.StatusOK, gin.H{"message": "Register successfully", "data": input})
-	
 }
 
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
+func (a authController) Register(context *gin.Context) {
+	var input model.RegisterUserRequest
+	if err := context.ShouldBindJSON(&input); err != nil {
+		response := model.BuildResponse("Failed to process request", err.Error(), nil)
+		context.AbortWithStatusJSON(http.StatusBadRequest, response)
+		return
+	}
+	if a.authService.IsDuplicateUsername(input.Username) {
+		response := model.BuildResponse("Failed to register new user", "Username already exists", input)
+		context.JSON(http.StatusConflict, response)
+	} else {
+		registeredUser := a.authService.RegisterUser(input)
+		response := model.BuildResponse("Register success", "", registeredUser)
+		context.JSON(http.StatusOK, response)
+	}
+}
+
+func AuthController(authService service.IAuthService, jwtService service.IJwtService) IAuthController {
+	return &authController{
+		authService: authService,
+		jwtService:  jwtService,
+	}
 }
