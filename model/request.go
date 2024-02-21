@@ -20,3 +20,9 @@ type EditAccountRequest struct {
 	FirstName *string `json:"first_name"`
 	LastName  *string `json:"last_name"`
 }
+
+type FilterUserRequest struct {
+	UserID    uint   `form:"user_id"`
+	CreatedAt string `form:"created_at"`
+	Phone     string `form:"phone"`
+}

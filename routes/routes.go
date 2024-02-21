@@ -13,4 +13,6 @@ func AuthRoutes(authRoutes *gin.RouterGroup, authController controller.IAuthCont
 func UserRoutes(authRoutes *gin.RouterGroup, userController controller.IUserController) {
 	authRoutes.PUT("/edit", userController.EditAccount)
 	authRoutes.DELETE("/delete", userController.DeleteAccount)
+	authRoutes.GET("/filter", userController.FilterAccount)
+	authRoutes.GET("/report-by-created_at", userController.StatisticizeAccountByCreatedAt)
 }
