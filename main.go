@@ -15,13 +15,16 @@ var (
 	db = database.Connect()
 
 	userRepository = repository.UserRepository(db)
+	bookRepository = repository.NewBookRepository(db)
 
-	authService = service.AuthService(userRepository)
-	jwtService  = service.NewJwtService()
-	userService = service.NewUserService(userRepository)
+	authService  = service.AuthService(userRepository)
+	jwtService   = service.NewJwtService()
+	userService  = service.NewUserService(userRepository)
+	adminService = service.NewAdminService(bookRepository)
 
-	authController = controller.AuthController(authService, jwtService)
-	userController = controller.NewUserController(userService)
+	authController  = controller.AuthController(authService, jwtService)
+	userController  = controller.NewUserController(userService)
+	adminController = controller.NewAdminController(adminService)
 )
 
 func main() {
@@ -33,6 +36,10 @@ func main() {
 	userRoutes := router.Group("/user")
 	userRoutes.Use(middleware.AuthorizeJWT(jwtService))
 	routes.UserRoutes(userRoutes, userController)
+
+	adminRoutes := router.Group("/admin")
+	adminRoutes.Use(middleware.AuthorizeJWT(jwtService))
+	routes.AdminRoutes(adminRoutes, adminController)
 
 	err := router.Run(":8080")
 	if err != nil {

@@ -16,3 +16,7 @@ func UserRoutes(authRoutes *gin.RouterGroup, userController controller.IUserCont
 	authRoutes.GET("/filter", userController.FilterAccount)
 	authRoutes.GET("/report-by-created_at", userController.StatisticizeAccountByCreatedAt)
 }
+
+func AdminRoutes(adminRoutes *gin.RouterGroup, adminController controller.IAdminController) {
+	adminRoutes.POST("/import", adminController.ImportBookData)
+}
