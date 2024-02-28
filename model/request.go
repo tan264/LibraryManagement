@@ -26,3 +26,19 @@ type FilterUserRequest struct {
 	CreatedAt string `form:"created_at"`
 	Phone     string `form:"phone"`
 }
+
+type CreateBookRequest struct {
+	Title     string `json:"title" binding:"required"`
+	LibraryID uint   `json:"library_id" binding:"required"`
+}
+
+type FilterBookRequest struct {
+	BookID    uint   `form:"book_id"`
+	CreatedAt string `form:"created_at"`
+}
+
+type UpdateBookRequest struct {
+	BookID    uint    `json:"book_id" binding:"required"`
+	Title     *string `json:"title"`
+	LibraryID uint    `json:"library_id"`
+}

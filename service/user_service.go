@@ -10,10 +10,29 @@ type IUserService interface {
 	DeleteAccount(userID uint) error
 	FilterAccount(request model.FilterUserRequest) ([]model.User, error)
 	StatisticizeAccountByCreatedAt() (map[string]uint, error)
+	CheckoutBook(bookID uint, userID uint) (model.Checkout, error)
+	ReturnBook(bookID uint, userID uint) (model.Checkout, error)
 }
 
 type UserService struct {
-	userRepository repository.IUserRepository
+	userRepository     repository.IUserRepository
+	checkoutRepository repository.ICheckoutRepository
+}
+
+func (u UserService) CheckoutBook(bookID uint, userID uint) (model.Checkout, error) {
+	checkoutBook, err := u.checkoutRepository.CheckoutBook(bookID, userID)
+	if err != nil {
+		return checkoutBook, err
+	}
+	return checkoutBook, nil
+}
+
+func (u UserService) ReturnBook(bookID uint, userID uint) (model.Checkout, error) {
+	returnedBook, err := u.checkoutRepository.ReturnBook(bookID, userID)
+	if err != nil {
+		return returnedBook, err
+	}
+	return returnedBook, nil
 }
 
 func (u UserService) FilterAccount(request model.FilterUserRequest) (users []model.User, err error) {
@@ -24,9 +43,10 @@ func (u UserService) FilterAccount(request model.FilterUserRequest) (users []mod
 	return users, nil
 }
 
-func NewUserService(userRepository repository.IUserRepository) IUserService {
+func NewUserService(userRepository repository.IUserRepository, checkoutRepository repository.ICheckoutRepository) IUserService {
 	return UserService{
-		userRepository: userRepository,
+		userRepository:     userRepository,
+		checkoutRepository: checkoutRepository,
 	}
 }
 

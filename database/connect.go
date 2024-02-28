@@ -19,11 +19,13 @@ func Connect() *gorm.DB {
 
 	if err != nil {
 		log.Fatalln("Cannot connect to MySQL:", err)
+		return nil
 	}
 
 	log.Println("Connected to MySQL:", db.Name())
 	err = db.AutoMigrate(&model.User{}, &model.Address{}, &model.Library{}, &model.Book{}, &model.Checkout{}, &model.Token{})
 	if err != nil {
+		log.Fatalln(err)
 		return nil
 	}
 	return db

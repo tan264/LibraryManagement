@@ -11,10 +11,28 @@ import (
 
 type IAdminService interface {
 	ImportBookData(header *multipart.FileHeader) (string, error)
+	CreateBook(book model.Book) (model.Book, error)
+	UpdateBook(book model.Book) (model.Book, error)
+	DeleteBook(bookID uint) error
 }
 
 type adminService struct {
 	bookRepository repository.IBookRepository
+}
+
+func (a adminService) CreateBook(book model.Book) (model.Book, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a adminService) UpdateBook(book model.Book) (model.Book, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a adminService) DeleteBook(bookID uint) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewAdminService(bookRepository repository.IBookRepository) IAdminService {

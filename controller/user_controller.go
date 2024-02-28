@@ -5,6 +5,7 @@ import (
 	"LibraryManagement/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type IUserController interface {
@@ -12,10 +13,61 @@ type IUserController interface {
 	DeleteAccount(context *gin.Context)
 	FilterAccount(context *gin.Context)
 	StatisticizeAccountByCreatedAt(context *gin.Context)
+	CheckoutBook(context *gin.Context)
+	ReturnBook(context *gin.Context)
 }
 
 type UserController struct {
 	userService service.IUserService
+}
+
+func (u UserController) CheckoutBook(context *gin.Context) {
+	userID, exists := context.Get("userID")
+	if exists {
+		bookIDString := context.Param("book_id")
+		bookID, err := strconv.ParseUint(bookIDString, 10, 64)
+		if err != nil {
+			response := model.BuildResponse("Failed to process request", err.Error(), nil)
+			context.AbortWithStatusJSON(http.StatusBadRequest, response)
+			return
+		}
+		checkout, err := u.userService.CheckoutBook(uint(bookID), uint(userID.(float64)))
+		if err != nil {
+			response := model.BuildResponse("Failed to checkout", err.Error(), nil)
+			context.AbortWithStatusJSON(http.StatusInternalServerError, response)
+			return
+		}
+		response := model.BuildResponse("Checkout success", "", checkout)
+		context.JSON(http.StatusOK, response)
+	} else {
+		response := model.BuildResponse("Unauthorized", "", nil)
+		context.AbortWithStatusJSON(http.StatusUnauthorized, response)
+	}
+}
+
+func (u UserController) ReturnBook(context *gin.Context) {
+	userID, exists := context.Get("userID")
+	if exists {
+		bookIDString := context.Param("book_id")
+		bookID, err := strconv.ParseUint(bookIDString, 10, 64)
+		if err != nil {
+			response := model.BuildResponse("Failed to process request", err.Error(), nil)
+			context.AbortWithStatusJSON(http.StatusBadRequest, response)
+			return
+		}
+		checkout, err := u.userService.ReturnBook(uint(bookID), uint(userID.(float64)))
+		if err != nil {
+			response := model.BuildResponse("Failed to return", err.Error(), nil)
+			context.AbortWithStatusJSON(http.StatusInternalServerError, response)
+			return
+		}
+		response := model.BuildResponse("Return success", "", checkout)
+		context.JSON(http.StatusOK, response)
+	} else {
+		response := model.BuildResponse("Unauthorized", "", nil)
+		context.AbortWithStatusJSON(http.StatusUnauthorized, response)
+
+	}
 }
 
 func (u UserController) StatisticizeAccountByCreatedAt(context *gin.Context) {
